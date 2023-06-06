@@ -60,6 +60,10 @@
 
 <script setup>
 import { ref } from 'vue'
+import { auth } from '@/firebase'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import route from '@/router'
+import { useRouter } from 'vue-router'
 
 const myForm = ref(null)
 const title = ref('Chat - VN')
@@ -72,6 +76,9 @@ const passwordFieldType = ref('password')
 const btnLabel = ref('GO!')
 const visibility = ref(false)
 const visibilityIcon = ref('visibility')
+let isLogined = ref(true)
+let message = ref('')
+const router = useRouter()
 
 const required = (val) => {
   return (val && val.length > 0) || 'Vui lòng điền thông tin'
@@ -83,7 +90,7 @@ const diffPassword = (val) => {
 }
 
 const short = (val) => {
-  return (val && val.length > 3) || 'Giá trị nhập vào phải lớn hơn 6 ký tự'
+  return (val && val.length >= 6) || 'Giá trị nhập vào phải lớn hơn 6 ký tự'
 }
 
 const isEmail = (val) => {
@@ -113,14 +120,32 @@ const isEmail = (val) => {
 //     }
 //   }
 // }
-const submit = () => {
-  myForm.value.validate().then((success) => {
+const submit = async () => {
+  myForm.value.validate().then(async (success) => {
     if (success) {
       let dataLogin = {
         email: email.value,
         password: password.value
       }
-      console.log(dataLogin)
+      try {
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          dataLogin.email,
+          dataLogin.password
+        )
+        const user = userCredential.user
+        localStorage.setItem('token', user.accessToken)
+        router.push('/')
+      } catch (error) {
+        console.log('Login Faild')
+        // const errorCode = error.code
+        // isLogined = false
+        // if (errorCode.includes('user-not-found') || errorCode.includes('invalid-email')) {
+        //   message = 'Email không tồn tại!'
+        // } else {
+        //   message = 'Mật khẩu không chính xác'
+        // }
+      }
     } else {
       console.log('No')
     }
