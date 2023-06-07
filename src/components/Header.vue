@@ -8,7 +8,7 @@
       class="bg-primary text-white shadow-2"
     >
       <q-route-tab :to="'/'" name="home" icon="home" label="Home" />
-      <q-route-tab :to="'/about'" name="about" icon="alarm" label="About" />
+      <q-route-tab :to="'/chats'" name="Chat" icon="chat" label="Chat" />
       <q-route-tab :to="'/photos'" name="photos" icon="photo" label="Photos" />
       <q-route-tab :to="'/videos'" name="videos" icon="slow_motion_video" label="Videos" />
       <q-route-tab color="primary" label="Products">
@@ -24,6 +24,7 @@
           </q-list>
         </q-menu>
       </q-route-tab>
+      <q-tab class="q-ml-auto" name="logouts" icon="logout" label="Logut" @click="handleLogout()" />
     </q-tabs>
   </div>
   <div>
@@ -41,6 +42,11 @@ let breadcrumbsList = ref([])
 
 const getRouter = () => {
   breadcrumbsList.value = route.currentRoute.value.matched
+}
+
+const handleLogout = () => {
+  localStorage.removeItem('token')
+  route.push('/login')
 }
 
 watch(() => {

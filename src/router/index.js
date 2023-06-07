@@ -10,10 +10,10 @@ const router = createRouter({
       component: HomeView
     },
     {
-      path: '/about',
-      name: 'About',
-      meta: { title: 'About' },
-      component: () => import('../views/AboutView.vue')
+      path: '/chats',
+      name: 'Chat',
+      meta: { title: 'chat' },
+      component: () => import('../views/ChatView.vue')
     },
     {
       path: '/videos',
@@ -38,19 +38,22 @@ const router = createRouter({
       path: '/login',
       name: 'Login',
       component: () => import('../views/LoginView.vue')
+    },
+    {
+      path: '/register',
+      name: 'Register',
+      component: () => import('../views/RegisterView.vue')
     }
   ]
 })
 
 router.beforeEach((to, from, next) => {
-  const publicPages = ['/login']
-  const authRequired = !publicPages.includes(to.path)
-  const loggedIn = localStorage.getItem('token')
-  if (authRequired && !loggedIn) {
+  const isAuthenticated = localStorage.getItem('token')
+  if (to.path !== '/login' && !isAuthenticated) {
     next('/login')
-  } else {
-    console.log('OK')
-    next()
-  }
+  } else if (to.path === '/login' && isAuthenticated) {
+    next('/')
+    return
+  } else next()
 })
 export default router

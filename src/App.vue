@@ -9,9 +9,6 @@ let isLogin = ref(true)
 
 <template>
   <q-layout>
-    <!-- <q-page-container v-if="isLogin">
-      <Login />
-    </q-page-container> -->
     <q-page-container>
       <Header v-if="$route.path !== '/login'" />
       <RouterView :key="$route.fullPath" />
