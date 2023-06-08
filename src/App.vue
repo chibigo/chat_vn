@@ -1,16 +1,26 @@
 <script setup>
 import { RouterView } from 'vue-router'
+import route from '@/router'
 import Header from '@/components/Header.vue'
-import Login from '@/views/LoginView.vue'
-import { auth } from '@/firebase/index'
-import { ref, watch, computed } from 'vue'
-let isLogin = ref(true)
+import { ref, watchEffect } from 'vue'
+let isLogin = ref(false)
+
+const isCheckRouter = () => {
+  const routeItem = route.currentRoute.value.path
+  if (routeItem !== '/login' && routeItem !== '/register') {
+    isLogin.value = true
+    return
+  }
+  isLogin.value = false
+  return
+}
+watchEffect(isCheckRouter)
 </script>
 
 <template>
   <q-layout>
     <q-page-container>
-      <Header v-if="$route.path !== '/login'" />
+      <Header v-if="isLogin" />
       <RouterView :key="$route.fullPath" />
     </q-page-container>
   </q-layout>

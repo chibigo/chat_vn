@@ -24,7 +24,13 @@
           </q-list>
         </q-menu>
       </q-route-tab>
-      <q-tab class="q-ml-auto" name="logouts" icon="logout" label="Logut" @click="handleLogout()" />
+      <q-chip class="q-ml-auto">
+        <q-avatar>
+          <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
+        </q-avatar>
+        {{ name }}
+      </q-chip>
+      <q-tab name="logouts" icon="logout" label="Logut" @click="handleLogout()" />
     </q-tabs>
   </div>
   <div>
@@ -34,10 +40,13 @@
 
 <script setup>
 import Breadcrumbs from './Breadcrumbs.vue'
-import { ref, watch } from 'vue'
+import { ref, watchEffect } from 'vue'
+import { auth, db } from '@/firebase'
+import { collection, getDocs } from 'firebase/firestore'
 import route from '@/router'
 
 const tab = ref('home')
+const name = ref('No_name')
 let breadcrumbsList = ref([])
 
 const getRouter = () => {
@@ -48,10 +57,19 @@ const handleLogout = () => {
   localStorage.removeItem('token')
   route.push('/login')
 }
-
-watch(() => {
-  getRouter()
-})
+const getUserItem = async () => {
+  const emailLogin = auth.currentUser?.email
+  console.log()
+  const querySnapshot = await getDocs(collection(db, 'users'))
+  querySnapshot.forEach((doc) => {
+    if (emailLogin === doc.data().email) {
+      name.value = doc.data().name
+    }
+    console.log(name.value)
+  })
+}
+watchEffect(getRouter)
+watchEffect(getUserItem)
 </script>
 
 <style lang="scss" scoped></style>

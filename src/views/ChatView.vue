@@ -122,22 +122,27 @@
 
       <q-page-container class="bg-grey-2">
         <div style="width: 100%" class="q-px-md q-pt-md">
-          <q-chat-message
-            name="me"
-            avatar="https://cdn.quasar.dev/img/avatar1.jpg"
-            :text="['hey, how are you?']"
-            stamp="7 minutes ago"
-            sent
-            bg-color="amber-7"
-          />
-          <q-chat-message
-            name="Jane"
-            avatar="https://cdn.quasar.dev/img/avatar5.jpg"
-            :text="['doing fine, how r you?']"
-            stamp="4 minutes ago"
-            text-color="white"
-            bg-color="primary"
-          />
+          <q-page>
+            <q-chat-message
+              name="me"
+              avatar="https://cdn.quasar.dev/img/avatar1.jpg"
+              :text="['hey, how are you?']"
+              stamp="7 minutes ago"
+              sent
+              bg-color="amber-7"
+            />
+            <q-chat-message
+              name="Jane"
+              avatar="https://cdn.quasar.dev/img/avatar5.jpg"
+              :text="['doing fine, how r you?']"
+              stamp="4 minutes ago"
+              text-color="white"
+              bg-color="primary"
+            />
+            <q-page-scroller reverse position="top" :scroll-offset="20" :offset="[0, 52]">
+              <q-btn fab icon="keyboard_arrow_down" color="accent" />
+            </q-page-scroller>
+          </q-page>
         </div>
       </q-page-container>
 

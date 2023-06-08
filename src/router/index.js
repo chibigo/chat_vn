@@ -5,6 +5,12 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/login',
+      name: 'Login',
+      meta: { title: 'Login' },
+      component: () => import('../views/LoginView.vue')
+    },
+    {
       path: '/',
       name: 'Home',
       component: HomeView
@@ -35,13 +41,9 @@ const router = createRouter({
       // ]
     },
     {
-      path: '/login',
-      name: 'Login',
-      component: () => import('../views/LoginView.vue')
-    },
-    {
       path: '/register',
       name: 'Register',
+      meta: { title: 'Register' },
       component: () => import('../views/RegisterView.vue')
     }
   ]
@@ -49,7 +51,10 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const isAuthenticated = localStorage.getItem('token')
-  if (to.path !== '/login' && !isAuthenticated) {
+
+  if (to.path === '/register' && !isAuthenticated) {
+    next()
+  } else if (to.path !== '/login' && !isAuthenticated) {
     next('/login')
   } else if (to.path === '/login' && isAuthenticated) {
     next('/')

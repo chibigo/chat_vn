@@ -47,7 +47,7 @@
                   @click="submit"
                 />
               </q-card-actions>
-              <q-card-section class="text-center q-pa-none">
+              <q-card-section class="text-center q-pa-none text-register" @click="goToRgister">
                 <p class="text-grey-6">Not reigistered? Created an Account</p>
               </q-card-section>
             </q-card>
@@ -60,25 +60,17 @@
 
 <script setup>
 import { ref } from 'vue'
-import { auth } from '@/firebase'
+import { auth, db } from '@/firebase'
 import { signInWithEmailAndPassword } from 'firebase/auth'
+import { collection, getDocs } from 'firebase/firestore'
 import route from '@/router'
 import { useRouter } from 'vue-router'
 
 const myForm = ref(null)
 const title = ref('Chat - VN')
 const email = ref('')
-const username = ref('')
+const name = ref('')
 const password = ref('')
-const repassword = ref('')
-const register = ref(false)
-const passwordFieldType = ref('password')
-const btnLabel = ref('GO!')
-const visibility = ref(false)
-const visibilityIcon = ref('visibility')
-let isLogined = ref(true)
-let message = ref('')
-const router = useRouter()
 
 const required = (val) => {
   return (val && val.length > 0) || 'Vui lòng điền thông tin'
@@ -98,75 +90,77 @@ const isEmail = (val) => {
     /^(?=[a-zA-Z0-9@._%+-]{6,254}$)[a-zA-Z0-9._%+-]{1,64}@(?:[a-zA-Z0-9-]{1,63}\.){1,8}[a-zA-Z]{2,63}$/
   return emailPattern.test(val) || 'Email không đúng định dạng'
 }
+const getUserItem = async (user) => {
+  console.log('94', user)
+  // const querySnapshot = await getDocs(collection(db, 'users'))
+  // querySnapshot.forEach((doc) => {
+  //   console.log('doc', doc)
+  //   if (emailLogin === doc.data().email) {
+  //     name.value = doc.data().name
+  //   }
+  //   console.log(name.value)
+  // })
+}
 
-// const submit = () => {
-//   if (register.value) {
-//     email.value.$refs.validate()
-//     username.value.$refs.validate()
-//     password.value.$refs.validate()
-//     repassword.value.$refs.validate()
-//   } else {
-//     email.value.$refs.validate()
-//     password.value.$refs.validate()
-//   }
-
-//   if (!register.value) {
-//     if (!email.value.$refs.hasError && !password.value.$refs.hasError) {
-//       $q.notify({
-//         icon: 'done',
-//         color: 'positive',
-//         message: 'go go'
-//       })
-//     }
-//   }
-// }
 const submit = async () => {
-  myForm.value.validate().then(async (success) => {
+  try {
+    const success = await myForm.value.validate()
     if (success) {
       let dataLogin = {
         email: email.value,
         password: password.value
       }
-      try {
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          dataLogin.email,
-          dataLogin.password
-        )
-        const user = userCredential.user
-        localStorage.setItem('token', user.accessToken)
-        router.push('/')
-      } catch (error) {
-        console.log('Login Faild')
-        // const errorCode = error.code
-        // isLogined = false
-        // if (errorCode.includes('user-not-found') || errorCode.includes('invalid-email')) {
-        //   message = 'Email không tồn tại!'
-        // } else {
-        //   message = 'Mật khẩu không chính xác'
-        // }
-      }
+
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        dataLogin.email,
+        dataLogin.password
+      )
+      const user = userCredential.user
+      await getUserItem(user)
+      console.log(name.value, '116')
+      localStorage.setItem('token', user.accessToken)
+      // return router.push('/');
     } else {
       console.log('No')
     }
-  })
+  } catch (error) {
+    console.log('Login Failed')
+    // const errorCode = error.code;
+    // isLogined = false;
+    // if (errorCode.includes('user-not-found') || errorCode.includes('invalid-email')) {
+    //   message = 'Email không tồn tại!';
+    // } else {
+    //   message = 'Mật khẩu không chính xác';
+    // }
+  }
 }
 
-const switchTypeForm = () => {
-  register.value = !register.value
-  title.value = register.value ? 'Dang Ky' : 'Dang Nhap'
-  btnLabel.value = register.value ? 'Register' : 'Login'
-}
+// const switchTypeForm = () => {
+//   register.value = !register.value
+//   title.value = register.value ? 'Dang Ky' : 'Dang Nhap'
+//   btnLabel.value = register.value ? 'Register' : 'Login'
+// }
 
-const switchVisibility = () => {
-  visibility.value = !visibility.value
-  passwordFieldType.value = visibility.value ? 'text' : 'password'
-  visibilityIcon.value = visibility.value ? 'visibility_off' : 'visibility'
+// const switchVisibility = () => {
+//   visibility.value = !visibility.value
+//   passwordFieldType.value = visibility.value ? 'text' : 'password'
+//   visibilityIcon.value = visibility.value ? 'visibility_off' : 'visibility'
+// }
+
+const goToRgister = () => {
+  route.push('/register')
 }
 </script>
 
-<style>
+<style lang="scss" scoped>
 .q-card {
   width: 360px;
+}
+.text-register {
+  cursor: pointer;
+  :hover {
+    color: #8bc34a !important;
+  }
 }
 </style>

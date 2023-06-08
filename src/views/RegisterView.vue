@@ -2,7 +2,7 @@
   <q-page class="bg-light-green window-height window-width row justify-center items-center">
     <div class="column q-pa-lg">
       <div class="row">
-        <q-card square class="shadow-24" style="width: 300px; height: 485px">
+        <q-card square class="shadow-24" style="width: 400px; height: 485px">
           <q-card-section class="bg-blue-13">
             <h4 class="text-h5 text-white q-my-md">Chat - VN</h4>
           </q-card-section>
@@ -30,11 +30,11 @@
               unelevated
               size="lg"
               class="full-width text-white bg-light-green"
-              label="Get Started"
+              label="Register"
               @click="signUpUser()"
             />
           </q-card-actions>
-          <q-card-section class="text-center q-pa-sm">
+          <q-card-section class="text-center q-pa-sm text-login" @click="goToLogin">
             <p class="text-grey-6">Return to login</p>
           </q-card-section>
         </q-card>
@@ -44,28 +44,44 @@
 </template>
 
 <script setup>
-import { auth } from '@/firebase'
-import { async } from '@firebase/util'
+import { auth, db } from '@/firebase'
+import { collection, addDoc } from 'firebase/firestore'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { ref } from 'vue'
+import route from '@/router'
+
 let email = ref('')
 let username = ref('')
 let password = ref('')
 
 const signUpUser = async () => {
-  await createUserWithEmailAndPassword(auth, email.value, password.value)
-    .then((res) => {
-      // Signed in
-
-      const user = res.user
-      // ...
+  try {
+    const res = await createUserWithEmailAndPassword(auth, email.value, password.value)
+    const user = res.user
+    const docRef = await addDoc(collection(db, 'users'), {
+      email: email.value,
+      id: user.uid,
+      image: '',
+      name: username.value,
+      password: password.value
     })
-    .catch((error) => {
-      const errorCode = error.code
-      const errorMessage = error.message
-      // ..
-    })
+    console.log('Document written with ID:', docRef.id)
+  } catch (error) {
+    console.error('Error signing up:', error)
+    const errorCode = error.code
+    const errorMessage = error.message
+  }
+}
+const goToLogin = () => {
+  route.push('/login')
 }
 </script>
 
-<style></style>
+<style lang="scss" scoped>
+.text-login {
+  cursor: pointer;
+  :hover {
+    color: #8bc34a !important;
+  }
+}
+</style>
