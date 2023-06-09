@@ -63,14 +63,17 @@ import { ref } from 'vue'
 import { auth, db } from '@/firebase'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { collection, getDocs } from 'firebase/firestore'
-import route from '@/router'
+// import route from '@/router'
 import { useRouter } from 'vue-router'
+import { userLoginStore } from '@/stores/user.js'
 
 const myForm = ref(null)
 const title = ref('Chat - VN')
 const email = ref('')
 const name = ref('')
 const password = ref('')
+const router = useRouter()
+const userStore = userLoginStore()
 
 const required = (val) => {
   return (val && val.length > 0) || 'Vui lòng điền thông tin'
@@ -91,15 +94,12 @@ const isEmail = (val) => {
   return emailPattern.test(val) || 'Email không đúng định dạng'
 }
 const getUserItem = async (user) => {
-  console.log('94', user)
-  // const querySnapshot = await getDocs(collection(db, 'users'))
-  // querySnapshot.forEach((doc) => {
-  //   console.log('doc', doc)
-  //   if (emailLogin === doc.data().email) {
-  //     name.value = doc.data().name
-  //   }
-  //   console.log(name.value)
-  // })
+  const querySnapshot = await getDocs(collection(db, 'users'))
+  querySnapshot.forEach((doc) => {
+    if (user.email === doc.data().email) {
+      name.value = doc.data().name
+    }
+  })
 }
 
 const submit = async () => {
@@ -118,9 +118,10 @@ const submit = async () => {
       )
       const user = userCredential.user
       await getUserItem(user)
-      console.log(name.value, '116')
+      userStore.id = user.uid
+      userStore.name = name.value
       localStorage.setItem('token', user.accessToken)
-      // return router.push('/');
+      return router.push('/')
     } else {
       console.log('No')
     }
@@ -149,7 +150,7 @@ const submit = async () => {
 // }
 
 const goToRgister = () => {
-  route.push('/register')
+  router.push('/register')
 }
 </script>
 

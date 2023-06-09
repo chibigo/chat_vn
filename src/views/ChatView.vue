@@ -12,13 +12,16 @@
           />
 
           <q-btn round flat>
-            <q-avatar>
-              <img :src="currentConversation.avatar" />
+            <q-avatar v-if="userItem?.image == '' || userItem?.image == null">
+              <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
+            </q-avatar>
+            <q-avatar v-else>
+              <img :src="userItem?.image" />
             </q-avatar>
           </q-btn>
 
           <span class="q-subtitle-1 q-pl-md">
-            {{ currentConversation.person }}
+            {{ userItem?.name }}
           </span>
 
           <q-space />
@@ -42,12 +45,9 @@
       <q-drawer v-model="leftDrawerOpen" show-if-above bordered :breakpoint="690">
         <q-toolbar class="bg-grey-3">
           <q-avatar class="cursor-pointer">
-            <img src="https://cdn.quasar.dev/logo-v2/svg/logo.svg" />
+            <q-btn round flat icon="chat" />
           </q-avatar>
-
           <q-space />
-
-          <q-btn round flat icon="message" />
           <q-btn round flat icon="more_vert">
             <q-menu auto-close :offset="[110, 8]">
               <q-list style="min-width: 150px">
@@ -93,14 +93,17 @@
               @click="setCurrentConversation(index)"
             >
               <q-item-section avatar>
-                <q-avatar>
-                  <img :src="conversation.avatar" />
+                <q-avatar v-if="conversation?.image == '' || conversation?.image == null">
+                  <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
+                </q-avatar>
+                <q-avatar v-else>
+                  <img :src="conversation?.image" />
                 </q-avatar>
               </q-item-section>
 
               <q-item-section>
                 <q-item-label lines="1">
-                  {{ conversation.person }}
+                  {{ conversation.name }}
                 </q-item-label>
                 <q-item-label class="conversation__summary" caption>
                   <q-icon name="check" v-if="conversation.sent" />
@@ -124,20 +127,13 @@
         <div style="width: 100%" class="q-px-md q-pt-md">
           <q-page>
             <q-chat-message
-              name="me"
-              avatar="https://cdn.quasar.dev/img/avatar1.jpg"
-              :text="['hey, how are you?']"
+              v-for="(messageItem, index) in listMessage"
+              :key="index"
+              :name="handleGetNameUser(messageItem)"
+              avatar="https://cdn.quasar.dev/img/avatar4.jpg"
+              :text="[messageItem?.content]"
+              :sent="messageItem?.id === userStore?.id"
               stamp="7 minutes ago"
-              sent
-              bg-color="amber-7"
-            />
-            <q-chat-message
-              name="Jane"
-              avatar="https://cdn.quasar.dev/img/avatar5.jpg"
-              :text="['doing fine, how r you?']"
-              stamp="4 minutes ago"
-              text-color="white"
-              bg-color="primary"
             />
             <q-page-scroller reverse position="top" :scroll-offset="20" :offset="[0, 52]">
               <q-btn fab icon="keyboard_arrow_down" color="accent" />
@@ -158,7 +154,7 @@
             v-model="message"
             placeholder="Type a message"
           />
-          <q-btn round dense flat icon="send" />
+          <q-btn type="submit" round dense flat icon="send" @click="submitMessage" />
           <q-btn round flat icon="mic" />
         </q-toolbar>
       </q-footer>
@@ -168,40 +164,45 @@
 
 <script setup>
 import { useQuasar } from 'quasar'
-import { ref, computed } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
+import { db, dbRealTime } from '@/firebase'
+import { ref as storageRef, set, push, onValue } from 'firebase/database'
+import { collection, getDocs } from 'firebase/firestore'
+import { userLoginStore } from '@/stores/user.js'
 
-const conversations = [
-  {
-    id: 1,
-    person: 'Razvan Stoenescu',
-    avatar: 'https://cdn.quasar.dev/team/razvan_stoenescu.jpeg',
-    caption: "I'm working on Quasar!",
-    time: '15:00',
-    sent: true
-  },
-  {
-    id: 2,
-    person: 'Dan Popescu',
-    avatar: 'https://cdn.quasar.dev/team/dan_popescu.jpg',
-    caption: "I'm working on Quasar!",
-    time: '16:00',
-    sent: false
-  }
-]
+const conversations = []
 const $q = useQuasar()
 
 const leftDrawerOpen = ref(false)
 const search = ref('')
 const message = ref('')
+const userStore = userLoginStore()
+const userItem = ref({})
+const dataMessage = ref({
+  id: null,
+  toId: null,
+  content: '',
+  time: '',
+  image: '',
+  sent: false
+})
+const listMessage = ref([])
 const currentConversationIndex = ref(0)
 
-const currentConversation = computed(() => {
-  return conversations[currentConversationIndex.value]
-})
+const getUserList = async () => {
+  const userId = userStore.id
+  const querySnapshot = await getDocs(collection(db, 'users'))
+  querySnapshot.forEach((doc) => {
+    if (userId !== doc.data().id) {
+      conversations.push(doc.data())
+    }
+  })
+  await getUserItem()
+}
 
-const style = computed(() => ({
-  height: $q.screen.height + 'px'
-}))
+const getUserItem = async () => {
+  userItem.value = conversations[currentConversationIndex.value]
+}
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
@@ -210,6 +211,58 @@ function toggleLeftDrawer() {
 function setCurrentConversation(index) {
   currentConversationIndex.value = index
 }
+
+const style = computed(() => ({
+  height: $q.screen.height + 'px'
+}))
+
+//Handle add message in firebase
+const submitMessage = async () => {
+  dataMessage.value = {
+    id: userStore.id,
+    content: message.value,
+    toId: userItem.value?.id,
+    image: ''
+  }
+  // set(storageRef(dbRealTime, 'message'), { ...dataMessage })
+  const addRef = storageRef(dbRealTime, 'message')
+  const newPostRef = push(addRef)
+  await set(newPostRef, {
+    ...dataMessage.value
+  })
+  await getListMessage()
+  message.value = ''
+}
+
+// Handle get message from firebase
+const getListMessage = () => {
+  const starCountRef = storageRef(dbRealTime, 'message')
+  onValue(starCountRef, (snapshot) => {
+    // const user = userItem.value
+    const datas = snapshot.val()
+    const propertyDatas = datas ? Object.keys(datas) : []
+    listMessage.value = []
+    propertyDatas.forEach((element) => {
+      const dataConvert = datas[element]
+      // if (dataConvert.toId === user.id && dataConvert.id === userStore.id) {
+      //   console.log(listMessage.value)
+      // }
+      listMessage.value.push(dataConvert)
+    })
+  })
+}
+
+const handleGetNameUser = (messageItem) => {
+  const user = userItem.value
+  if (messageItem.id === userStore.id) {
+    return 'me'
+  }
+  return user?.name
+}
+
+watchEffect(getUserItem)
+getUserList()
+getListMessage()
 setCurrentConversation
 toggleLeftDrawer
 </script>

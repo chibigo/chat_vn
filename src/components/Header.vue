@@ -41,13 +41,13 @@
 <script setup>
 import Breadcrumbs from './Breadcrumbs.vue'
 import { ref, watchEffect } from 'vue'
-import { auth, db } from '@/firebase'
-import { collection, getDocs } from 'firebase/firestore'
 import route from '@/router'
+import { userLoginStore } from '@/stores/user.js'
 
 const tab = ref('home')
 const name = ref('No_name')
 let breadcrumbsList = ref([])
+const userStore = userLoginStore()
 
 const getRouter = () => {
   breadcrumbsList.value = route.currentRoute.value.matched
@@ -58,15 +58,7 @@ const handleLogout = () => {
   route.push('/login')
 }
 const getUserItem = async () => {
-  const emailLogin = auth.currentUser?.email
-  console.log()
-  const querySnapshot = await getDocs(collection(db, 'users'))
-  querySnapshot.forEach((doc) => {
-    if (emailLogin === doc.data().email) {
-      name.value = doc.data().name
-    }
-    console.log(name.value)
-  })
+  name.value = userStore.name
 }
 watchEffect(getRouter)
 watchEffect(getUserItem)

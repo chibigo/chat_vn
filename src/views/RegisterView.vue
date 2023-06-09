@@ -65,6 +65,7 @@ const signUpUser = async () => {
       name: username.value,
       password: password.value
     })
+    route.push('/login')
     console.log('Document written with ID:', docRef.id)
   } catch (error) {
     console.error('Error signing up:', error)
