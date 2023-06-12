@@ -106,7 +106,7 @@
                   {{ conversation.name }}
                 </q-item-label>
                 <q-item-label class="conversation__summary" caption>
-                  <q-icon name="check" v-if="conversation.sent" />
+                  <q-icon name="check" v-if="isRead" />
                   <q-icon name="not_interested" v-if="conversation.deleted" />
                   {{ conversation.caption }}
                 </q-item-label>
@@ -133,7 +133,7 @@
               avatar="https://cdn.quasar.dev/img/avatar4.jpg"
               :text="[messageItem?.content]"
               :sent="messageItem?.id === userStore?.id"
-              stamp="7 minutes ago"
+              :stamp="timeStampMessage(messageItem.time)"
             />
             <q-page-scroller reverse position="top" :scroll-offset="20" :offset="[0, 52]">
               <q-btn fab icon="keyboard_arrow_down" color="accent" />
@@ -164,12 +164,11 @@
 
 <script setup>
 import { useQuasar } from 'quasar'
-import { ref, computed, watchEffect } from 'vue'
+import { ref, computed, watchEffect, onMounted } from 'vue'
 import { db, dbRealTime } from '@/firebase'
-import { ref as storageRef, set, push, onValue } from 'firebase/database'
+import { ref as storageRef, set, push, onValue, update, child } from 'firebase/database'
 import { collection, getDocs } from 'firebase/firestore'
 import { userLoginStore } from '@/stores/user.js'
-
 const conversations = []
 const $q = useQuasar()
 
@@ -187,6 +186,8 @@ const dataMessage = ref({
   sent: false
 })
 const listMessage = ref([])
+const listMessageNotSent = ref([])
+let isRead = ref(false)
 const currentConversationIndex = ref(0)
 
 const getUserList = async () => {
@@ -202,6 +203,7 @@ const getUserList = async () => {
 
 const getUserItem = async () => {
   userItem.value = conversations[currentConversationIndex.value]
+  await getListMessage()
 }
 
 function toggleLeftDrawer() {
@@ -210,6 +212,7 @@ function toggleLeftDrawer() {
 
 function setCurrentConversation(index) {
   currentConversationIndex.value = index
+  sentCurrentMessage(currentConversationIndex)
 }
 
 const style = computed(() => ({
@@ -218,11 +221,14 @@ const style = computed(() => ({
 
 //Handle add message in firebase
 const submitMessage = async () => {
+  const timestamp = new Date().getTime()
   dataMessage.value = {
     id: userStore.id,
     content: message.value,
     toId: userItem.value?.id,
-    image: ''
+    image: '',
+    time: timestamp,
+    sent: false
   }
   // set(storageRef(dbRealTime, 'message'), { ...dataMessage })
   const addRef = storageRef(dbRealTime, 'message')
@@ -230,28 +236,31 @@ const submitMessage = async () => {
   await set(newPostRef, {
     ...dataMessage.value
   })
-  await getListMessage()
   message.value = ''
 }
 
 // Handle get message from firebase
-const getListMessage = () => {
+const getListMessage = async () => {
   const starCountRef = storageRef(dbRealTime, 'message')
   onValue(starCountRef, (snapshot) => {
-    // const user = userItem.value
+    const user = userItem.value
     const datas = snapshot.val()
     const propertyDatas = datas ? Object.keys(datas) : []
     listMessage.value = []
+
     propertyDatas.forEach((element) => {
       const dataConvert = datas[element]
-      // if (dataConvert.toId === user.id && dataConvert.id === userStore.id) {
-      //   console.log(listMessage.value)
-      // }
-      listMessage.value.push(dataConvert)
+      const currentUser = userStore.id === dataConvert.id || userStore.id === dataConvert.toId
+      const peerUser = user?.id && (user?.id == dataConvert.id || user?.id == dataConvert.toId)
+
+      if (currentUser && peerUser) {
+        listMessage.value.push(dataConvert)
+      }
     })
   })
 }
 
+// Handle get name user
 const handleGetNameUser = (messageItem) => {
   const user = userItem.value
   if (messageItem.id === userStore.id) {
@@ -260,11 +269,57 @@ const handleGetNameUser = (messageItem) => {
   return user?.name
 }
 
-watchEffect(getUserItem)
+// Handle get time when send messsage
+const timeStampMessage = (timeMessage) => {
+  if (timeMessage == null || timeMessage == NaN) {
+    return ''
+  }
+  const currentTime = new Date()
+  const messageTime = new Date(timeMessage)
+  const timeDiffMs = currentTime.getTime() - messageTime.getTime()
+
+  const currentMinuteSend = Math.floor(timeDiffMs / (1000 * 60))
+  const currentHoursSend = Math.floor(currentMinuteSend / 60)
+  const currentDaysSend = Math.floor(currentHoursSend / 24)
+
+  if (currentDaysSend >= 1) {
+    return `${currentDaysSend} days ago`
+  } else if (currentHoursSend >= 1) {
+    return `${currentHoursSend} hours ago`
+  } else if (currentMinuteSend >= 1) {
+    return `${currentMinuteSend} minutes ago`
+  } else {
+    return ''
+  }
+}
+
+const sentCurrentMessage = async (currentChatIndex) => {
+  const currentUserSent = conversations[currentChatIndex.value]
+  const messagesRef = storageRef(dbRealTime, 'messages')
+  const foundMessages = listMessage.value.filter(
+    (element) => element.sent === false && currentUserSent.id === element.id
+  )
+  if (foundMessages.length > 0) {
+    dataMessage.value = {
+      sent: true
+    }
+    foundMessages.forEach((message) => {
+      console.log('123')
+      Object.assign(message, dataMessage.value)
+      console.log('456')
+    })
+    // await messagesRef.child(message.id).update(message)
+    console.log('789')
+  } else {
+    isRead.value = true
+  }
+}
+
 getUserList()
 getListMessage()
 setCurrentConversation
 toggleLeftDrawer
+watchEffect(getUserItem)
 </script>
 
 <style lang="scss">
