@@ -89,7 +89,6 @@
               v-for="(conversation, index) in conversations"
               :key="conversation.id"
               clickable
-              v-ripple
               @click="setCurrentConversation(index)"
             >
               <q-item-section avatar>
@@ -106,17 +105,14 @@
                   {{ conversation.name }}
                 </q-item-label>
                 <q-item-label class="conversation__summary" caption>
-                  <q-icon name="check" v-if="isRead" />
+                  <q-icon name="check" v-if="conversation.sent ?? true" />
                   <q-icon name="not_interested" v-if="conversation.deleted" />
                   {{ conversation.caption }}
                 </q-item-label>
               </q-item-section>
 
               <q-item-section side>
-                <q-item-label caption>
-                  {{ conversation.time }}
-                </q-item-label>
-                <q-icon name="keyboard_arrow_down" />
+                <q-badge rounded color="red" :label="conversation.count" />
               </q-item-section>
             </q-item>
           </q-list>
@@ -131,10 +127,11 @@
               :key="index"
               :name="handleGetNameUser(messageItem)"
               avatar="https://cdn.quasar.dev/img/avatar4.jpg"
-              :text="[messageItem?.content]"
-              :sent="messageItem?.id === userStore?.id"
-              :stamp="timeStampMessage(messageItem.time)"
-            />
+              :sent="messageItem.dataConvert?.id === userStore?.id"
+              :stamp="timeStampMessage(messageItem.dataConvert.time)"
+            >
+              <div v-html="formatMessage(messageItem.dataConvert?.content)"></div>
+            </q-chat-message>
             <q-page-scroller reverse position="top" :scroll-offset="20" :offset="[0, 52]">
               <q-btn fab icon="keyboard_arrow_down" color="accent" />
             </q-page-scroller>
@@ -145,16 +142,18 @@
       <q-footer>
         <q-toolbar class="bg-grey-3 text-black row">
           <q-btn round flat icon="insert_emoticon" class="q-mr-sm" />
-          <q-input
-            rounded
-            outlined
-            dense
-            class="WAL__field col-grow q-mr-sm"
-            bg-color="white"
-            v-model="message"
-            placeholder="Type a message"
-          />
-          <q-btn type="submit" round dense flat icon="send" @click="submitMessage" />
+          <q-form @submit="submitMessage" class="full-width row">
+            <q-input
+              rounded
+              outlined
+              dense
+              class="WAL__field col-grow q-mr-sm"
+              bg-color="white"
+              v-model="message"
+              placeholder="Type a message"
+            />
+            <q-btn type="submit" round dense flat icon="send" />
+          </q-form>
           <q-btn round flat icon="mic" />
         </q-toolbar>
       </q-footer>
@@ -164,11 +163,12 @@
 
 <script setup>
 import { useQuasar } from 'quasar'
-import { ref, computed, watchEffect, onMounted } from 'vue'
+import { ref, computed, watchEffect, onMounted, watch } from 'vue'
 import { db, dbRealTime } from '@/firebase'
-import { ref as storageRef, set, push, onValue, update, child } from 'firebase/database'
+import { ref as storageRef, set, push, onValue, update, child, get } from 'firebase/database'
 import { collection, getDocs } from 'firebase/firestore'
 import { userLoginStore } from '@/stores/user.js'
+import DOMPurify from 'dompurify'
 const conversations = []
 const $q = useQuasar()
 
@@ -186,24 +186,20 @@ const dataMessage = ref({
   sent: false
 })
 const listMessage = ref([])
-const listMessageNotSent = ref([])
-let isRead = ref(false)
+const listMessageSent = ref([])
 const currentConversationIndex = ref(0)
 
 const getUserList = async () => {
   const userId = userStore.id
   const querySnapshot = await getDocs(collection(db, 'users'))
-  querySnapshot.forEach((doc) => {
-    if (userId !== doc.data().id) {
-      conversations.push(doc.data())
-    }
-  })
+  conversations.push(
+    ...querySnapshot.docs.filter((doc) => userId !== doc.data().id).map((doc) => doc.data())
+  )
   await getUserItem()
 }
 
 const getUserItem = async () => {
   userItem.value = conversations[currentConversationIndex.value]
-  await getListMessage()
 }
 
 function toggleLeftDrawer() {
@@ -222,21 +218,25 @@ const style = computed(() => ({
 //Handle add message in firebase
 const submitMessage = async () => {
   const timestamp = new Date().getTime()
-  dataMessage.value = {
-    id: userStore.id,
-    content: message.value,
-    toId: userItem.value?.id,
-    image: '',
-    time: timestamp,
-    sent: false
+  if (message.value == '') {
+    return
+  } else {
+    dataMessage.value = {
+      id: userStore.id,
+      content: message.value,
+      toId: userItem.value?.id,
+      image: '',
+      time: timestamp,
+      sent: false
+    }
+    // set(storageRef(dbRealTime, 'message'), { ...dataMessage })
+    const addRef = storageRef(dbRealTime, 'message')
+    const newPostRef = push(addRef)
+    await set(newPostRef, {
+      ...dataMessage.value
+    })
+    message.value = ''
   }
-  // set(storageRef(dbRealTime, 'message'), { ...dataMessage })
-  const addRef = storageRef(dbRealTime, 'message')
-  const newPostRef = push(addRef)
-  await set(newPostRef, {
-    ...dataMessage.value
-  })
-  message.value = ''
 }
 
 // Handle get message from firebase
@@ -246,15 +246,18 @@ const getListMessage = async () => {
     const user = userItem.value
     const datas = snapshot.val()
     const propertyDatas = datas ? Object.keys(datas) : []
+    listMessageSent.value = []
     listMessage.value = []
-
     propertyDatas.forEach((element) => {
       const dataConvert = datas[element]
+      if (dataConvert.sent == false) {
+        listMessageSent.value.push(dataConvert)
+      }
       const currentUser = userStore.id === dataConvert.id || userStore.id === dataConvert.toId
       const peerUser = user?.id && (user?.id == dataConvert.id || user?.id == dataConvert.toId)
 
       if (currentUser && peerUser) {
-        listMessage.value.push(dataConvert)
+        listMessage.value.push({ dataConvert, key: element })
       }
     })
   })
@@ -293,33 +296,92 @@ const timeStampMessage = (timeMessage) => {
   }
 }
 
-const sentCurrentMessage = async (currentChatIndex) => {
+const handleSentMessage = () => {
+  const countMap = {}
+
+  listMessageSent.value.forEach((elementA) => {
+    const id = elementA.id
+    const currentId = id === userStore.id
+    const toCurrentId = elementA.toId === userStore.id
+    if (countMap[id] && !currentId && toCurrentId) {
+      countMap[id].count++
+    } else if (!currentId && toCurrentId) {
+      countMap[id] = {
+        id,
+        count: 1
+      }
+    }
+  })
+
+  const result = Object.values(countMap)
+  for (const item of result) {
+    const conversationIndex = conversations.findIndex((conv) => conv.id === item.id)
+    if (conversationIndex !== -1) {
+      conversations[conversationIndex].count = item.count
+      conversations[conversationIndex].sent = false
+    }
+  }
+  console.log(conversations)
+}
+
+const sentCurrentMessage = (currentChatIndex) => {
   const currentUserSent = conversations[currentChatIndex.value]
-  const messagesRef = storageRef(dbRealTime, 'messages')
+  const updates = {}
   const foundMessages = listMessage.value.filter(
-    (element) => element.sent === false && currentUserSent.id === element.id
+    (element) => element.dataConvert.sent === false && currentUserSent.id === element.dataConvert.id
   )
   if (foundMessages.length > 0) {
     dataMessage.value = {
       sent: true
     }
-    foundMessages.forEach((message) => {
-      console.log('123')
-      Object.assign(message, dataMessage.value)
-      console.log('456')
+    foundMessages.forEach(async (message) => {
+      Object.assign(message.dataConvert, dataMessage.value)
+      updates['/message/' + message.key] = message.dataConvert
+      await update(storageRef(dbRealTime), updates)
     })
-    // await messagesRef.child(message.id).update(message)
-    console.log('789')
-  } else {
-    isRead.value = true
   }
+}
+//Format message
+const formatMessage = (str) => {
+  const sanitizedStr = DOMPurify.sanitize(str)
+  const urlPattern = /^(ftp|http|https):\/\/[^ "]+$/
+  const domainPattern = /^((?:https?:\/\/)?(?:[^.\s]+\.)+[a-z]{2,})/i
+  const extensionPattern = /\.(com|vn|org|net|edu)$/i
+
+  let messageArray = sanitizedStr.split(' ')
+  let modifiedArray = []
+
+  messageArray.forEach((value) => {
+    if (urlPattern.test(value) || domainPattern.test(value)) {
+      const hasDomain = domainPattern.test(value)
+      const hasExtension = extensionPattern.test(value)
+
+      if (hasDomain && !hasExtension) {
+        const linkText = `${value}.com`
+        modifiedArray.push(`<a href="${value}">${linkText}</a>`)
+      } else {
+        modifiedArray.push(`<a href="${value}">${value}</a>`)
+      }
+    } else {
+      modifiedArray.push(value)
+    }
+  })
+
+  return modifiedArray.join(' ')
 }
 
 getUserList()
-getListMessage()
-setCurrentConversation
 toggleLeftDrawer
 watchEffect(getUserItem)
+watch(userItem, () => {
+  getListMessage()
+})
+// watch(currentConversationIndex, () => {
+//   sentCurrentMessage()
+// })
+watch(listMessageSent, () => {
+  handleSentMessage()
+})
 </script>
 
 <style lang="scss">
