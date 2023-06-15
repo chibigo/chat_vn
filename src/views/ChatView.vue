@@ -27,9 +27,13 @@
           <q-space />
 
           <q-btn round flat icon="search" />
-          <q-btn round flat>
+          <q-btn round flat @click="dialogUploadImage = true">
             <q-icon name="attachment" class="rotate-135" />
           </q-btn>
+          <DialogUploadImg
+            :dialogUploadImage="dialogUploadImage"
+            @handleCloseDialog="handleCloseDialog"
+          />
           <q-btn round flat icon="more_vert">
             <q-menu auto-close :offset="[110, 0]">
               <q-list style="min-width: 150px">
@@ -141,7 +145,14 @@
 
       <q-footer>
         <q-toolbar class="bg-grey-3 text-black row">
-          <q-btn round flat icon="insert_emoticon" class="q-mr-sm" />
+          <q-item class="form_emojis">
+            <q-btn round flat icon="insert_emoticon" class="q-mr-sm" @click="showModelEmoji()" />
+            <buttonEmojis
+              class="form_emojis_item"
+              v-if="isShowEmoji"
+              @emoji_click="handle_emoji_click"
+            />
+          </q-item>
           <q-form @submit="submitMessage" class="full-width row">
             <q-input
               rounded
@@ -165,10 +176,13 @@
 import { useQuasar } from 'quasar'
 import { ref, computed, watchEffect, onMounted, watch } from 'vue'
 import { db, dbRealTime } from '@/firebase'
-import { ref as storageRef, set, push, onValue, update, child, get } from 'firebase/database'
+import { ref as storageRef, set, push, onValue, update } from 'firebase/database'
 import { collection, getDocs } from 'firebase/firestore'
 import { userLoginStore } from '@/stores/user.js'
 import DOMPurify from 'dompurify'
+import buttonEmojis from '@/components/buttons/button_emojis.vue'
+import DialogUploadImg from '@/components/dialogs/upload_image.vue'
+
 const conversations = []
 const $q = useQuasar()
 
@@ -188,6 +202,8 @@ const dataMessage = ref({
 const listMessage = ref([])
 const listMessageSent = ref([])
 const currentConversationIndex = ref(0)
+const isShowEmoji = ref(false)
+const dialogUploadImage = ref(false)
 
 const getUserList = async () => {
   const userId = userStore.id
@@ -341,33 +357,40 @@ const sentCurrentMessage = (currentChatIndex) => {
     })
   }
 }
-//Format message
+//Format message url
 const formatMessage = (str) => {
   const sanitizedStr = DOMPurify.sanitize(str)
   const urlPattern = /^(ftp|http|https):\/\/[^ "]+$/
-  const domainPattern = /^((?:https?:\/\/)?(?:[^.\s]+\.)+[a-z]{2,})/i
-  const extensionPattern = /\.(com|vn|org|net|edu)$/i
+  const extensionPattern = /\.(com|edu|gov|vn|net|org|info|pro|coop|museum|[a-zA-Z]{2})$/i
 
   let messageArray = sanitizedStr.split(' ')
   let modifiedArray = []
 
   messageArray.forEach((value) => {
-    if (urlPattern.test(value) || domainPattern.test(value)) {
-      const hasDomain = domainPattern.test(value)
-      const hasExtension = extensionPattern.test(value)
-
-      if (hasDomain && !hasExtension) {
-        const linkText = `${value}.com`
-        modifiedArray.push(`<a href="${value}">${linkText}</a>`)
-      } else {
-        modifiedArray.push(`<a href="${value}">${value}</a>`)
-      }
+    if (urlPattern.test(value) || extensionPattern.test(value)) {
+      modifiedArray.push(`<a href="${value}">${value}</a>`)
     } else {
       modifiedArray.push(value)
     }
   })
-
   return modifiedArray.join(' ')
+}
+// handle show emoji
+const showModelEmoji = () => {
+  if (isShowEmoji.value == true) {
+    isShowEmoji.value = false
+  } else {
+    isShowEmoji.value = true
+  }
+}
+// handle get emoji
+const handle_emoji_click = (emoji) => {
+  message.value += emoji
+}
+
+// handle close dialog
+const handleCloseDialog = (val) => {
+  dialogUploadImage.value = val
 }
 
 getUserList()
@@ -424,5 +447,12 @@ watch(listMessageSent, () => {
 
 .conversation__summary {
   margin-top: 4px;
+}
+.form_emojis {
+  .form_emojis_item {
+    position: fixed;
+    top: 20%;
+    left: 16%;
+  }
 }
 </style>

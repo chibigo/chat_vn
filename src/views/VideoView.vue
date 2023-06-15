@@ -1,7 +1,9 @@
 <template>
-  <div>Video</div>
+  <buttonEmojis />
 </template>
 
-<script setup></script>
+<script setup>
+import buttonEmojis from '@/components/buttons/button_emojis.vue'
+</script>
 
 <style lang="scss" scoped></style>
