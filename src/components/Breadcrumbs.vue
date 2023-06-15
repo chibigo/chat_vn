@@ -12,7 +12,7 @@
   </div>
 </template>
 <script setup>
-import { ref, defineProps, watch, computed } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
   breadcrumbsList: {
