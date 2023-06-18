@@ -6,7 +6,7 @@ import router from './router'
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
-import { Quasar } from 'quasar'
+import { Quasar, Notify } from 'quasar'
 import '@quasar/extras/material-icons/material-icons.css'
 import 'quasar/src/css/index.sass'
 
@@ -17,6 +17,6 @@ const app = createApp(App)
 app.use(router)
 app.use(pinia)
 app.use(Quasar, {
-  plugins: {}
+  plugins: { Notify }
 })
 app.mount('#app')
