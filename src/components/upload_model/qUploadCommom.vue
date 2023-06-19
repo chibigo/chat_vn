@@ -5,10 +5,11 @@
         <div class="row justify-center">
           <q-uploader
             ref="uploader"
-            label="Images / Videos / Files"
+            label="Images / Videos"
             square
             flat
             multiple
+            accept="image/*, video/*"
             removeUploadedFiles
             @added="onFileAdded"
             @removed="removeFlies"
@@ -35,7 +36,9 @@
 
 <script setup>
 import { storage } from '@/firebase'
+import { db } from '@/firebase'
 import { ref as storageRef, uploadBytes } from 'firebase/storage'
+import { collection, addDoc } from 'firebase/firestore'
 import { ref } from 'vue'
 import { userLoginStore } from '@/stores/user.js'
 import { useLoadingStore } from '@/stores/loading'
@@ -45,11 +48,14 @@ const filesList = ref([])
 const userStore = userLoginStore()
 const isLoadingStore = useLoadingStore()
 const uploader = ref(null)
+const emit = defineEmits(['handle_getListFiles'])
 
+// add files
 const onFileAdded = (files) => {
   filesList.value = [...files]
 }
 
+// remove files
 const removeFlies = (files) => {
   filesList.value = filesList.value.filter((f) => f !== files[0])
 }
@@ -65,12 +71,17 @@ const onSubmit = async () => {
       filesList.value.map(async (file) => {
         const stRef = storageRef(storage, `${folder}/` + file.name)
         await uploadBytes(stRef, file).then((snapshot) => {
-          console.log(snapshot)
           // Remove the uploaded file from filesList
           filesList.value = filesList.value.filter((f) => f !== file)
         })
+        await addDoc(collection(db, 'files'), {
+          userId: folder,
+          fileName: file.name,
+          fileUrl: 'file.url'
+        })
       })
     )
+    emit('handle_getListFiles', true)
     uploader.value.reset()
     isLoadingStore.setLoading(false)
     if (isLoadingStore.isLoading == false) {

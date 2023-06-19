@@ -399,9 +399,7 @@ watchEffect(getUserItem)
 watch(userItem, () => {
   getListMessage()
 })
-// watch(currentConversationIndex, () => {
-//   sentCurrentMessage()
-// })
+
 watch(listMessageSent, () => {
   handleSentMessage()
 })
