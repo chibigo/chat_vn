@@ -40,6 +40,7 @@
               <q-card-actions class="q-px-md">
                 <q-btn
                   unelevated
+                  :loading="isLoadingStore.isLoading"
                   color="light-green-7"
                   size="lg"
                   class="full-width"
@@ -63,7 +64,7 @@ import { ref } from 'vue'
 import { auth, db } from '@/firebase'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { collection, getDocs } from 'firebase/firestore'
-// import route from '@/router'
+import { useLoadingStore } from '@/stores/loading'
 import { useRouter } from 'vue-router'
 import { userLoginStore } from '@/stores/user.js'
 
@@ -74,6 +75,7 @@ const name = ref('')
 const password = ref('')
 const router = useRouter()
 const userStore = userLoginStore()
+const isLoadingStore = useLoadingStore()
 
 const required = (val) => {
   return (val && val.length > 0) || 'Vui lòng điền thông tin'
@@ -110,7 +112,7 @@ const submit = async () => {
         email: email.value,
         password: password.value
       }
-
+      isLoadingStore.setLoading(true)
       const userCredential = await signInWithEmailAndPassword(
         auth,
         dataLogin.email,
@@ -121,19 +123,13 @@ const submit = async () => {
       userStore.id = user.uid
       userStore.name = name.value
       localStorage.setItem('token', user.accessToken)
+      isLoadingStore.setLoading(false)
       return router.push('/')
     } else {
       console.log('No')
     }
   } catch (error) {
     console.log('Login Failed')
-    // const errorCode = error.code;
-    // isLogined = false;
-    // if (errorCode.includes('user-not-found') || errorCode.includes('invalid-email')) {
-    //   message = 'Email không tồn tại!';
-    // } else {
-    //   message = 'Mật khẩu không chính xác';
-    // }
   }
 }
 

@@ -1,6 +1,6 @@
 <template>
   <q-dialog persistent v-model="dialog">
-    <q-card>
+    <q-card class="from_dialog">
       <q-btn
         class="close_dialog"
         no-caps
@@ -9,9 +9,9 @@
         v-close-popup
         @click="handleShowAndCloseDialog"
       />
-      <q-card-section class="row items-center q-gutter-sm">
-        <div class="q-gutter-sm row items-start">
-          <QUploadCommom />
+      <q-card-section class="row items-center">
+        <div>
+          <ShowFileComp />
         </div>
       </q-card-section>
     </q-card>
@@ -20,7 +20,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import QUploadCommom from '../upload_model/qUploadCommom.vue'
+import ShowFileComp from '@/components/photos/showFileComponent.vue'
 
 const dialog = ref(false)
 
@@ -43,6 +43,9 @@ watch(
 </script>
 
 <style lang="scss" scoped>
+.from_dialog {
+  max-width: 1013px;
+}
 .close_dialog {
   margin: 4px 0 0 4px;
 }

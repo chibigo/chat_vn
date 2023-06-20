@@ -15,12 +15,13 @@ import QUploadCommom from '@/components/upload_model/qUploadCommom.vue'
 import FileComponent from '../components/photos/showFileComponent.vue'
 
 const isUploadFile = ref(null)
+const filesUpload = ref([])
 
 const handle_getListFiles = (isUpload) => {
   isUploadFile.value = isUpload
 }
-const isHandleUnUpload = (isUnUpload) => {
-  isUploadFile.value = isUnUpload
+const isHandleUnUpload = (isCheckUpload) => {
+  isUploadFile.value = isCheckUpload
 }
 </script>
 
