@@ -1,6 +1,24 @@
 <template>
+  <div class="q-pa-md flex flex-start">
+    <q-btn
+      class="btn_select"
+      color="white"
+      text-color="black"
+      label="Select All"
+      @click="handleSelectAll()"
+    />
+    <q-btn
+      class="btn_select"
+      color="white"
+      text-color="black"
+      label="Unselect All"
+      @click="handleUnselectAll()"
+    />
+  </div>
   <div class="q-pa-md row items-start q-gutter-md">
-    <q-card class="my-card file" v-for="(file, index) in listRedcordPagination" :key="index">
+    <LoadingComp v-if="isLoading" />
+    <q-card v-else class="my-card file" v-for="(file, index) in listRedcordPagination" :key="index">
+      <q-checkbox v-model="selection" color="teal" :val="file" />
       <q-img class="file_item_image" v-if="regexImage.test(file.name)" :src="file.url" />
       <q-video v-else class="file_item_image" :src="file.url" />
 
@@ -14,8 +32,8 @@
           icon="download"
           @click="handleDownloadFile(file.url, file.name)"
         >
-          Download</q-btn
-        >
+          Download
+        </q-btn>
       </q-card-actions>
     </q-card>
   </div>
@@ -34,6 +52,7 @@ import { storage } from '@/firebase'
 import { ref as storageRef, listAll, getDownloadURL } from 'firebase/storage'
 import { userLoginStore } from '@/stores/user.js'
 import PaginationComponent from '@/components/buttons/pagination_component.vue'
+import LoadingComp from '../dialogs/loadingComp.vue'
 
 const props = defineProps({
   isUploadFile: {
@@ -51,6 +70,9 @@ const isUpload = ref(false)
 const regexImage = /^.*\.(jpg|jpeg|png|gif|bmp|tiff|psd|raw|cr2|nef|orf|sr2)$/i
 const folder = `${userStore.name}_${userStore.id}`
 const listRef = storageRef(storage, folder)
+const isLoading = ref(false)
+const isCheckBox = ref(false)
+const selection = ref([])
 const emit = defineEmits(['isHandleUnUpload'])
 
 // get list files
@@ -58,6 +80,7 @@ const getListFilesStore = async () => {
   try {
     const res = await listAll(listRef)
     files.value = []
+    isLoading.value = true
     for (const itemRef of res.items) {
       const storeRefDownload = storageRef(storage, `${folder}/${itemRef.name}`)
       try {
@@ -70,6 +93,7 @@ const getListFilesStore = async () => {
         // Handle individual download error
       }
     }
+    isLoading.value = false
     listRecord.value = files.value
     if (isUpload.value == true) {
       emit('isHandleUnUpload', false)
@@ -96,7 +120,16 @@ const handleDownloadFile = (url, name) => {
   xhr.open('GET', url)
   xhr.send()
 }
-
+// Handle checkbox
+const handleSubmitFileChecked = (file, index) => {
+  console.log(selection.value)
+}
+const handleSelectAll = () => {
+  selection.value = listRecord.value
+}
+const handleUnselectAll = () => {
+  selection.value = []
+}
 // handle Pagination
 const handlePagination = (val) => {
   page.value = val.value
@@ -118,9 +151,13 @@ watch(isUpload, () => {
     getListFilesStore()
   }
 })
+// watch(isCheckBox, () => handleCheckBox())
 </script>
 
 <style lang="scss" scoped>
+.btn_select {
+  margin-right: 12px;
+}
 .my-card {
   max-height: 300px;
   width: 100%;

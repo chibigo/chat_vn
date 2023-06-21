@@ -10,7 +10,7 @@
         @click="handleShowAndCloseDialog"
       />
       <q-card-section class="row items-center">
-        <div>
+        <div class="files">
           <ShowFileComp />
         </div>
       </q-card-section>
@@ -44,12 +44,13 @@ watch(
 
 <style lang="scss" scoped>
 .from_dialog {
+  min-width: 600px;
   max-width: 1013px;
-}
-.close_dialog {
-  margin: 4px 0 0 4px;
-}
-.upload_file {
-  margin-left: 0;
+  .close_dialog {
+    margin: 4px 0 0 4px;
+  }
+  .files {
+    width: 100%;
+  }
 }
 </style>

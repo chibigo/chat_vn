@@ -18,7 +18,7 @@
         </div>
         <div class="row justify-center">
           <q-btn
-            :loading="isLoadingStore.isLoading"
+            :loading="isloading"
             :disable="filesList.length < 1 ? true : false"
             class="q-ma-sm"
             type="submit"
@@ -41,13 +41,12 @@ import { ref as storageRef, uploadBytes } from 'firebase/storage'
 import { collection, addDoc } from 'firebase/firestore'
 import { ref } from 'vue'
 import { userLoginStore } from '@/stores/user.js'
-import { useLoadingStore } from '@/stores/loading'
 import { Notify } from 'quasar'
 
 const filesList = ref([])
 const userStore = userLoginStore()
-const isLoadingStore = useLoadingStore()
 const uploader = ref(null)
+const isloading = ref(false)
 const emit = defineEmits(['handle_getListFiles'])
 
 // add files
@@ -66,7 +65,7 @@ const onSubmit = async () => {
     console.log('No value')
     return
   } else {
-    isLoadingStore.setLoading(true)
+    isloading.value = true
     await Promise.all(
       filesList.value.map(async (file) => {
         const stRef = storageRef(storage, `${folder}/` + file.name)
@@ -83,8 +82,8 @@ const onSubmit = async () => {
     )
     emit('handle_getListFiles', true)
     uploader.value.reset()
-    isLoadingStore.setLoading(false)
-    if (isLoadingStore.isLoading == false) {
+    isloading.value = false
+    if (isloading.value == false) {
       Notify.create({
         message: 'Thêm file thành công',
         color: 'green',
