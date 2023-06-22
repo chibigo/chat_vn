@@ -233,7 +233,7 @@ function setCurrentConversation(index) {
 }
 
 const style = computed(() => ({
-  height: $q.screen.height + 'px'
+  height: $q.screen.height - 101 + 'px'
 }))
 
 //Handle add message in firebase
@@ -459,9 +459,8 @@ watch(listMessageSent, () => {
   &__layout {
     margin: 0 auto;
     z-index: 99;
-    height: 50%;
-    width: 90%;
-    max-width: 1200px;
+    height: 100%;
+    width: 100%;
     border-radius: 5px;
   }
 
