@@ -1,10 +1,6 @@
 <template>
   <div class="loading">
-    <div class="lds-facebook">
-      <div></div>
-      <div></div>
-      <div></div>
-    </div>
+    <div class="lds-hourglass"></div>
     <div class="loading_text">Vui lòng đợi...</div>
   </div>
 </template>
@@ -22,6 +18,7 @@ export default {
   width: 100%;
   display: grid;
   justify-content: center;
+  justify-items: center;
   .loading_text {
     letter-spacing: 0.0015em;
     font-size: 1.6rem;
@@ -31,42 +28,35 @@ export default {
       -8px 7px #c0cbff;
   }
 }
-.lds-facebook {
+.lds-hourglass {
   display: inline-block;
   position: relative;
   width: 80px;
   height: 80px;
-  margin: 0 auto;
 }
-.lds-facebook div {
-  display: inline-block;
-  position: absolute;
-  left: 8px;
-  width: 16px;
-  background: #a3a3a3;
-  animation: lds-facebook 1.2s cubic-bezier(0, 0.5, 0.5, 1) infinite;
+.lds-hourglass:after {
+  content: ' ';
+  display: block;
+  border-radius: 50%;
+  width: 0;
+  height: 0;
+  margin: 8px;
+  box-sizing: border-box;
+  border: 32px solid #0051ff;
+  border-color: #1976d2 transparent #1976d2 transparent;
+  animation: lds-hourglass 1.2s infinite;
 }
-.lds-facebook div:nth-child(1) {
-  left: 8px;
-  animation-delay: -0.24s;
-}
-.lds-facebook div:nth-child(2) {
-  left: 32px;
-  animation-delay: -0.12s;
-}
-.lds-facebook div:nth-child(3) {
-  left: 56px;
-  animation-delay: 0;
-}
-@keyframes lds-facebook {
+@keyframes lds-hourglass {
   0% {
-    top: 8px;
-    height: 64px;
+    transform: rotate(0);
+    animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
   }
-  50%,
+  50% {
+    transform: rotate(900deg);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
   100% {
-    top: 24px;
-    height: 32px;
+    transform: rotate(1800deg);
   }
 }
 </style>

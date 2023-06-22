@@ -11,7 +11,7 @@
       />
       <q-card-section class="row items-center">
         <div class="files">
-          <ShowFileComp />
+          <ShowFileComp @handleUploadFileSelect="handleUploadFileSelect" :dialog="dialog" />
         </div>
       </q-card-section>
     </q-card>
@@ -30,12 +30,14 @@ const props = defineProps({
     default: false
   }
 })
-const emit = defineEmits(['handleCloseDialog'])
+const emit = defineEmits(['handleCloseDialog', 'handleFlieSelectToMessage'])
 
 const handleShowAndCloseDialog = () => {
   emit('handleCloseDialog', false)
 }
-
+const handleUploadFileSelect = (filesSelect) => {
+  emit('handleFlieSelectToMessage', filesSelect)
+}
 watch(
   () => props.dialogUploadImage,
   (show) => (dialog.value = show)

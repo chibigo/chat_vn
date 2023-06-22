@@ -8,18 +8,27 @@
       @click="handleSelectAll()"
     />
     <q-btn
+      :disable="selection.length === 0"
       class="btn_select"
       color="white"
       text-color="black"
       label="Unselect All"
       @click="handleUnselectAll()"
     />
+    <q-btn
+      v-if="selection.length > 0 && props.dialog"
+      class="btn_select"
+      color="primary"
+      text-color="white"
+      label="Add"
+      @click="handleSubmitFileChecked()"
+    />
   </div>
   <div class="q-pa-md row items-start q-gutter-md">
     <LoadingComp v-if="isLoading" />
     <q-card v-else class="my-card file" v-for="(file, index) in listRedcordPagination" :key="index">
       <q-checkbox v-model="selection" color="teal" :val="file" />
-      <q-img class="file_item_image" v-if="regexImage.test(file.name)" :src="file.url" />
+      <q-img class="file_item_image" v-if="Regex.IMAGE.test(file.name)" :src="file.url" />
       <q-video v-else class="file_item_image" :src="file.url" />
 
       <q-card-section>
@@ -27,6 +36,7 @@
       </q-card-section>
       <q-card-actions>
         <q-btn
+          v-if="!props.dialog"
           dark-percentage
           color="primary"
           icon="download"
@@ -53,9 +63,14 @@ import { ref as storageRef, listAll, getDownloadURL } from 'firebase/storage'
 import { userLoginStore } from '@/stores/user.js'
 import PaginationComponent from '@/components/buttons/pagination_component.vue'
 import LoadingComp from '../dialogs/loadingComp.vue'
+import Regex from '@/common/regex'
 
 const props = defineProps({
   isUploadFile: {
+    type: Boolean,
+    default: false
+  },
+  dialog: {
     type: Boolean,
     default: false
   }
@@ -67,13 +82,11 @@ const listRecord = ref([])
 const totalPages = ref(5)
 const page = ref(1)
 const isUpload = ref(false)
-const regexImage = /^.*\.(jpg|jpeg|png|gif|bmp|tiff|psd|raw|cr2|nef|orf|sr2)$/i
 const folder = `${userStore.name}_${userStore.id}`
 const listRef = storageRef(storage, folder)
 const isLoading = ref(false)
-const isCheckBox = ref(false)
 const selection = ref([])
-const emit = defineEmits(['isHandleUnUpload'])
+const emit = defineEmits(['isHandleUnUpload', 'handleUploadFileSelect'])
 
 // get list files
 const getListFilesStore = async () => {
@@ -102,6 +115,7 @@ const getListFilesStore = async () => {
     // Uh-oh, an error occurred!
   }
 }
+
 // Handle download file
 const handleDownloadFile = (url, name) => {
   const xhr = new XMLHttpRequest()
@@ -109,10 +123,9 @@ const handleDownloadFile = (url, name) => {
   xhr.onload = (event) => {
     const blob = xhr.response
 
-    // Create a temporary <a> element to download the file
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = name // Set the desired file name
+    a.download = name
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -121,8 +134,9 @@ const handleDownloadFile = (url, name) => {
   xhr.send()
 }
 // Handle checkbox
-const handleSubmitFileChecked = (file, index) => {
-  console.log(selection.value)
+const handleSubmitFileChecked = () => {
+  emit('handleUploadFileSelect', selection.value)
+  selection.value = []
 }
 const handleSelectAll = () => {
   selection.value = listRecord.value
@@ -130,6 +144,7 @@ const handleSelectAll = () => {
 const handleUnselectAll = () => {
   selection.value = []
 }
+
 // handle Pagination
 const handlePagination = (val) => {
   page.value = val.value
