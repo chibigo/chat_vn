@@ -33,6 +33,7 @@
           <DialogUploadImg
             :dialogUploadImage="dialogUploadImage"
             @handleCloseDialog="handleCloseDialog"
+            @handleFlieSelectToMessage="handleFlieSelectToMessage"
           />
           <q-btn round flat icon="more_vert">
             <q-menu auto-close :offset="[110, 0]">
@@ -146,12 +147,14 @@
       <q-footer>
         <q-toolbar class="bg-grey-3 text-black row">
           <q-item class="form_emojis">
-            <q-btn round flat icon="insert_emoticon" class="q-mr-sm" @click="showModelEmoji()" />
-            <buttonEmojis
-              class="form_emojis_item"
-              v-if="isShowEmoji"
-              @emoji_click="handle_emoji_click"
-            />
+            <q-btn round flat icon="insert_emoticon" class="" @click="showModelEmoji()" />
+            <div class="form_emojis_container">
+              <buttonEmojis
+                class="form_emojis_item"
+                v-if="isShowEmoji"
+                @emoji_click="handle_emoji_click"
+              />
+            </div>
           </q-item>
           <q-form @submit="submitMessage" class="full-width row">
             <q-input
@@ -173,8 +176,8 @@
 </template>
 
 <script setup>
-import { useQuasar } from 'quasar'
-import { ref, computed, watchEffect, onMounted, watch } from 'vue'
+import { useQuasar, Notify } from 'quasar'
+import { ref, computed, watchEffect, watch } from 'vue'
 import { db, dbRealTime } from '@/firebase'
 import { ref as storageRef, set, push, onValue, update } from 'firebase/database'
 import { collection, getDocs } from 'firebase/firestore'
@@ -182,6 +185,7 @@ import { userLoginStore } from '@/stores/user.js'
 import DOMPurify from 'dompurify'
 import buttonEmojis from '@/components/buttons/button_emojis.vue'
 import DialogUploadImg from '@/components/dialogs/upload_image.vue'
+import Regex from '@/common/regex'
 
 const conversations = []
 const $q = useQuasar()
@@ -200,6 +204,7 @@ const dataMessage = ref({
   sent: false
 })
 const listMessage = ref([])
+const filesMessage = ref([])
 const listMessageSent = ref([])
 const currentConversationIndex = ref(0)
 const isShowEmoji = ref(false)
@@ -228,18 +233,16 @@ function setCurrentConversation(index) {
 }
 
 const style = computed(() => ({
-  height: $q.screen.height + 'px'
+  height: $q.screen.height - 101 + 'px'
 }))
 
 //Handle add message in firebase
 const submitMessage = async () => {
   const timestamp = new Date().getTime()
-  if (message.value == '') {
-    return
-  } else {
+  if (message.value != '' || filesMessage.value.length > 0) {
     dataMessage.value = {
       id: userStore.id,
-      content: message.value,
+      content: message.value || filesMessage.value,
       toId: userItem.value?.id,
       image: '',
       time: timestamp,
@@ -252,6 +255,9 @@ const submitMessage = async () => {
       ...dataMessage.value
     })
     message.value = ''
+    filesMessage.value = []
+  } else {
+    return
   }
 }
 
@@ -337,7 +343,6 @@ const handleSentMessage = () => {
       conversations[conversationIndex].sent = false
     }
   }
-  console.log(conversations)
 }
 
 const sentCurrentMessage = (currentChatIndex) => {
@@ -359,30 +364,56 @@ const sentCurrentMessage = (currentChatIndex) => {
 }
 //Format message url
 const formatMessage = (str) => {
-  const sanitizedStr = DOMPurify.sanitize(str)
-  const urlPattern = /^(ftp|http|https):\/\/[^ "]+$/
-  const extensionPattern = /\.(com|edu|gov|vn|net|org|info|pro|coop|museum|[a-zA-Z]{2})$/i
-
-  let messageArray = sanitizedStr.split(' ')
   let modifiedArray = []
+  //Check str is it array
+  const getType = (obj) => Object.prototype.toString.call(obj).slice(8, -1)
+  const isArray = (obj) => getType(obj) === 'Array'
 
-  messageArray.forEach((value) => {
-    if (urlPattern.test(value) || extensionPattern.test(value)) {
-      modifiedArray.push(`<a href="${value}">${value}</a>`)
-    } else {
-      modifiedArray.push(value)
-    }
-  })
+  if (isArray(str)) {
+    str.forEach((fitemFile) => {
+      if (Regex.IMAGE.test(fitemFile.name)) {
+        modifiedArray.push(
+          `<img width="240" height="200" src="${fitemFile.url}" alt="${fitemFile.name}">`
+        )
+      } else {
+        modifiedArray.push(`<video width="240" height="200" controls>
+                              <source src="${fitemFile.url}" type="video/mp4">
+                            </video>`)
+      }
+    })
+  } else {
+    const sanitizedStr = DOMPurify.sanitize(str)
+    let messageArray = sanitizedStr.split(' ')
+
+    messageArray.forEach((value) => {
+      if (Regex.URLPATTERH.test(value) || Regex.URLDOMAIN.test(value)) {
+        modifiedArray.push(`<a href="${value}">${value}</a>`)
+      } else {
+        modifiedArray.push(value)
+      }
+    })
+  }
   return modifiedArray.join(' ')
 }
+
+//Get message from files selected
+const handleFlieSelectToMessage = async (filesSelect) => {
+  filesMessage.value = filesSelect
+  await submitMessage()
+  Notify.create({
+    message: 'Tải file thành công',
+    color: 'green',
+    position: 'top',
+    icon: 'check',
+    timeout: 1500
+  })
+}
+
 // handle show emoji
 const showModelEmoji = () => {
-  if (isShowEmoji.value == true) {
-    isShowEmoji.value = false
-  } else {
-    isShowEmoji.value = true
-  }
+  isShowEmoji.value = !isShowEmoji.value
 }
+
 // handle get emoji
 const handle_emoji_click = (emoji) => {
   message.value += emoji
@@ -399,9 +430,7 @@ watchEffect(getUserItem)
 watch(userItem, () => {
   getListMessage()
 })
-// watch(currentConversationIndex, () => {
-//   sentCurrentMessage()
-// })
+
 watch(listMessageSent, () => {
   handleSentMessage()
 })
@@ -429,10 +458,9 @@ watch(listMessageSent, () => {
 
   &__layout {
     margin: 0 auto;
-    z-index: 4000;
-    height: 50%;
-    width: 90%;
-    max-width: 1200px;
+    z-index: 99;
+    height: 100%;
+    width: 100%;
     border-radius: 5px;
   }
 
@@ -449,10 +477,10 @@ watch(listMessageSent, () => {
   margin-top: 4px;
 }
 .form_emojis {
-  .form_emojis_item {
-    position: fixed;
-    top: 20%;
-    left: 16%;
+  .form_emojis_container {
+    position: absolute;
+    top: -540%;
+    left: -169%;
   }
 }
 </style>

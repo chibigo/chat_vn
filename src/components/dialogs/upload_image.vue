@@ -1,6 +1,6 @@
 <template>
   <q-dialog persistent v-model="dialog">
-    <q-card>
+    <q-card class="from_dialog">
       <q-btn
         class="close_dialog"
         no-caps
@@ -9,9 +9,9 @@
         v-close-popup
         @click="handleShowAndCloseDialog"
       />
-      <q-card-section class="row items-center q-gutter-sm">
-        <div class="q-gutter-sm row items-start">
-          <QUploadCommom />
+      <q-card-section class="row items-center">
+        <div class="files">
+          <ShowFileComp @handleUploadFileSelect="handleUploadFileSelect" :dialog="dialog" />
         </div>
       </q-card-section>
     </q-card>
@@ -20,7 +20,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import QUploadCommom from '../upload_model/qUploadCommom.vue'
+import ShowFileComp from '@/components/photos/showFileComponent.vue'
 
 const dialog = ref(false)
 
@@ -30,12 +30,14 @@ const props = defineProps({
     default: false
   }
 })
-const emit = defineEmits(['handleCloseDialog'])
+const emit = defineEmits(['handleCloseDialog', 'handleFlieSelectToMessage'])
 
 const handleShowAndCloseDialog = () => {
   emit('handleCloseDialog', false)
 }
-
+const handleUploadFileSelect = (filesSelect) => {
+  emit('handleFlieSelectToMessage', filesSelect)
+}
 watch(
   () => props.dialogUploadImage,
   (show) => (dialog.value = show)
@@ -43,10 +45,14 @@ watch(
 </script>
 
 <style lang="scss" scoped>
-.close_dialog {
-  margin: 4px 0 0 4px;
-}
-.upload_file {
-  margin-left: 0;
+.from_dialog {
+  min-width: 600px;
+  max-width: 1013px;
+  .close_dialog {
+    margin: 4px 0 0 4px;
+  }
+  .files {
+    width: 100%;
+  }
 }
 </style>
