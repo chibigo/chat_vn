@@ -40,6 +40,7 @@
               <q-card-actions class="q-px-md">
                 <q-btn
                   unelevated
+                  :disable="isLoadingStore.isLoading"
                   :loading="isLoadingStore.isLoading"
                   color="light-green-7"
                   size="lg"
@@ -67,6 +68,7 @@ import { collection, getDocs } from 'firebase/firestore'
 import { useLoadingStore } from '@/stores/loading'
 import { useRouter } from 'vue-router'
 import { userLoginStore } from '@/stores/user.js'
+import { Notify } from 'quasar'
 
 const myForm = ref(null)
 const title = ref('Chat - VN')
@@ -122,28 +124,33 @@ const submit = async () => {
       await getUserItem(user)
       userStore.id = user.uid
       userStore.name = name.value
+      userStore.isLoggedIn = true
       localStorage.setItem('token', user.accessToken)
       isLoadingStore.setLoading(false)
       return router.push('/')
     } else {
-      console.log('No')
+      Notify.create({
+        message: 'Lỗi đăng nhập',
+        color: 'red',
+        position: 'top',
+        icon: 'error',
+        timeout: 2000
+      })
     }
   } catch (error) {
-    console.log('Login Failed')
+    const errorCode = error.code
+    const errorMessage = error.message
+    Notify.create({
+      message: 'Tài khoản / mật khẩu không chính xác',
+      color: 'red',
+      position: 'top',
+      icon: 'error',
+      timeout: 2000
+    })
+    isLoadingStore.setLoading(false)
+    return
   }
 }
-
-// const switchTypeForm = () => {
-//   register.value = !register.value
-//   title.value = register.value ? 'Dang Ky' : 'Dang Nhap'
-//   btnLabel.value = register.value ? 'Register' : 'Login'
-// }
-
-// const switchVisibility = () => {
-//   visibility.value = !visibility.value
-//   passwordFieldType.value = visibility.value ? 'text' : 'password'
-//   visibilityIcon.value = visibility.value ? 'visibility_off' : 'visibility'
-// }
 
 const goToRgister = () => {
   router.push('/register')
