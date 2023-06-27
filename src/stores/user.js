@@ -4,6 +4,7 @@ export const userLoginStore = defineStore('user', {
     return {
       id: null,
       name: '',
+      image: '',
       isLoggedIn: false
     }
   },

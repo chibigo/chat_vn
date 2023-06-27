@@ -18,7 +18,7 @@
                     type="email"
                     label="email"
                     lazy-rules
-                    :rules="[required, isEmail, short]"
+                    :rules="[ruleFrom.required, ruleFrom.isEmail, ruleFrom.short]"
                     ><template v-slot:prepend>
                       <q-icon name="email" />
                     </template>
@@ -31,7 +31,7 @@
                     type="password"
                     label="password"
                     lazy-rules
-                    :rules="[required, short]"
+                    :rules="[ruleFrom.required, ruleFrom.short]"
                   >
                     <template v-slot:prepend> <q-icon name="lock" /> </template
                   ></q-input>
@@ -69,7 +69,9 @@ import { useLoadingStore } from '@/stores/loading'
 import { useRouter } from 'vue-router'
 import { userLoginStore } from '@/stores/user.js'
 import { Notify } from 'quasar'
+import { RULE_INPUT_FROM } from '@/common/validate/index'
 
+const ruleFrom = RULE_INPUT_FROM
 const myForm = ref(null)
 const title = ref('Chat - VN')
 const email = ref('')
@@ -79,24 +81,6 @@ const router = useRouter()
 const userStore = userLoginStore()
 const isLoadingStore = useLoadingStore()
 
-const required = (val) => {
-  return (val && val.length > 0) || 'Vui lòng điền thông tin'
-}
-
-const diffPassword = (val) => {
-  const val2 = email.value
-  return (val && val === val2) || 'Mật khẩu không khớp'
-}
-
-const short = (val) => {
-  return (val && val.length >= 6) || 'Giá trị nhập vào phải lớn hơn 6 ký tự'
-}
-
-const isEmail = (val) => {
-  const emailPattern =
-    /^(?=[a-zA-Z0-9@._%+-]{6,254}$)[a-zA-Z0-9._%+-]{1,64}@(?:[a-zA-Z0-9-]{1,63}\.){1,8}[a-zA-Z]{2,63}$/
-  return emailPattern.test(val) || 'Email không đúng định dạng'
-}
 const getUserItem = async (user) => {
   const querySnapshot = await getDocs(collection(db, 'users'))
   querySnapshot.forEach((doc) => {

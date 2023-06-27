@@ -7,7 +7,7 @@
         label="X"
         color="red"
         v-close-popup
-        @click="handleShowAndCloseDialog"
+        @click="handleCloseDialog"
       />
       <q-card-section class="row items-center">
         <div class="files">
@@ -32,7 +32,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['handleCloseDialog', 'handleFlieSelectToMessage'])
 
-const handleShowAndCloseDialog = () => {
+const handleCloseDialog = () => {
   emit('handleCloseDialog', false)
 }
 const handleUploadFileSelect = (filesSelect) => {

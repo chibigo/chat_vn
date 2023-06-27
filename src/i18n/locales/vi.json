@@ -10,5 +10,11 @@
     "title": "Ngôn ngữ",
     "En": "Tiếng Anh",
     "Vi": "Tiếng Việt"
+  },
+  "from": {
+    "update": "Cập nhật",
+    "login": "Đăng nhật",
+    "logout": "Đăng xuất",
+    "register": "Đăng ký"
   }
 }

@@ -10,5 +10,11 @@
     "title": "Language",
     "En": "English",
     "Vi": "Vietnamese"
+  },
+  "from": {
+    "update": "Update",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register"
   }
 }
