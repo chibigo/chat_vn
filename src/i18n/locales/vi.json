@@ -1,0 +1,20 @@
+{
+  "nav": {
+    "home": "Trang chủ",
+    "chat": "Nhắn tin",
+    "photo": "Hình ảnh",
+    "video": "Videos",
+    "product": "Sản phẩm"
+  },
+  "language": {
+    "title": "Ngôn ngữ",
+    "En": "Tiếng Anh",
+    "Vi": "Tiếng Việt"
+  },
+  "from": {
+    "update": "Cập nhật",
+    "login": "Đăng nhật",
+    "logout": "Đăng xuất",
+    "register": "Đăng ký"
+  }
+}

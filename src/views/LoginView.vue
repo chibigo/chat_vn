@@ -18,7 +18,7 @@
                     type="email"
                     label="email"
                     lazy-rules
-                    :rules="[required, isEmail, short]"
+                    :rules="[ruleFrom.required, ruleFrom.isEmail, ruleFrom.short]"
                     ><template v-slot:prepend>
                       <q-icon name="email" />
                     </template>
@@ -31,7 +31,7 @@
                     type="password"
                     label="password"
                     lazy-rules
-                    :rules="[required, short]"
+                    :rules="[ruleFrom.required, ruleFrom.short]"
                   >
                     <template v-slot:prepend> <q-icon name="lock" /> </template
                   ></q-input>
@@ -40,6 +40,7 @@
               <q-card-actions class="q-px-md">
                 <q-btn
                   unelevated
+                  :disable="isLoadingStore.isLoading"
                   :loading="isLoadingStore.isLoading"
                   color="light-green-7"
                   size="lg"
@@ -67,7 +68,10 @@ import { collection, getDocs } from 'firebase/firestore'
 import { useLoadingStore } from '@/stores/loading'
 import { useRouter } from 'vue-router'
 import { userLoginStore } from '@/stores/user.js'
+import { Notify } from 'quasar'
+import { RULE_INPUT_FROM } from '@/common/validate/index'
 
+const ruleFrom = RULE_INPUT_FROM
 const myForm = ref(null)
 const title = ref('Chat - VN')
 const email = ref('')
@@ -77,24 +81,6 @@ const router = useRouter()
 const userStore = userLoginStore()
 const isLoadingStore = useLoadingStore()
 
-const required = (val) => {
-  return (val && val.length > 0) || 'Vui lòng điền thông tin'
-}
-
-const diffPassword = (val) => {
-  const val2 = email.value
-  return (val && val === val2) || 'Mật khẩu không khớp'
-}
-
-const short = (val) => {
-  return (val && val.length >= 6) || 'Giá trị nhập vào phải lớn hơn 6 ký tự'
-}
-
-const isEmail = (val) => {
-  const emailPattern =
-    /^(?=[a-zA-Z0-9@._%+-]{6,254}$)[a-zA-Z0-9._%+-]{1,64}@(?:[a-zA-Z0-9-]{1,63}\.){1,8}[a-zA-Z]{2,63}$/
-  return emailPattern.test(val) || 'Email không đúng định dạng'
-}
 const getUserItem = async (user) => {
   const querySnapshot = await getDocs(collection(db, 'users'))
   querySnapshot.forEach((doc) => {
@@ -122,28 +108,33 @@ const submit = async () => {
       await getUserItem(user)
       userStore.id = user.uid
       userStore.name = name.value
+      userStore.isLoggedIn = true
       localStorage.setItem('token', user.accessToken)
       isLoadingStore.setLoading(false)
       return router.push('/')
     } else {
-      console.log('No')
+      Notify.create({
+        message: 'Lỗi đăng nhập',
+        color: 'red',
+        position: 'top',
+        icon: 'error',
+        timeout: 2000
+      })
     }
   } catch (error) {
-    console.log('Login Failed')
+    const errorCode = error.code
+    const errorMessage = error.message
+    Notify.create({
+      message: 'Tài khoản / mật khẩu không chính xác',
+      color: 'red',
+      position: 'top',
+      icon: 'error',
+      timeout: 2000
+    })
+    isLoadingStore.setLoading(false)
+    return
   }
 }
-
-// const switchTypeForm = () => {
-//   register.value = !register.value
-//   title.value = register.value ? 'Dang Ky' : 'Dang Nhap'
-//   btnLabel.value = register.value ? 'Register' : 'Login'
-// }
-
-// const switchVisibility = () => {
-//   visibility.value = !visibility.value
-//   passwordFieldType.value = visibility.value ? 'text' : 'password'
-//   visibilityIcon.value = visibility.value ? 'visibility_off' : 'visibility'
-// }
 
 const goToRgister = () => {
   router.push('/register')

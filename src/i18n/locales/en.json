@@ -1,0 +1,20 @@
+{
+  "nav": {
+    "home": "Home",
+    "chat": "Chats",
+    "photo": "Photos",
+    "video": "Videos",
+    "product": "Products"
+  },
+  "language": {
+    "title": "Language",
+    "En": "English",
+    "Vi": "Vietnamese"
+  },
+  "from": {
+    "update": "Update",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register"
+  }
+}

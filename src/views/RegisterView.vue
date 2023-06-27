@@ -7,18 +7,39 @@
             <h4 class="text-h5 text-white q-my-md">Chat - VN</h4>
           </q-card-section>
           <q-card-section>
-            <q-form class="q-px-sm q-pt-xl q-pb-lg">
-              <q-input square clearable v-model="email" type="email" label="Email">
+            <q-form class="q-px-sm q-pt-sm q-pb-sm">
+              <q-input
+                square
+                clearable
+                v-model="email"
+                type="email"
+                label="Email"
+                :rules="[ruleFrom.required, ruleFrom.isEmail, ruleFrom.short]"
+              >
                 <template v-slot:prepend>
                   <q-icon name="email" />
                 </template>
               </q-input>
-              <q-input square clearable v-model="username" type="username" label="Username">
+              <q-input
+                square
+                clearable
+                v-model="username"
+                type="username"
+                label="Username"
+                :rules="[ruleFrom.required]"
+              >
                 <template v-slot:prepend>
                   <q-icon name="person" />
                 </template>
               </q-input>
-              <q-input square clearable v-model="password" type="password" label="Password">
+              <q-input
+                square
+                clearable
+                v-model="password"
+                type="password"
+                label="Password"
+                :rules="[ruleFrom.required, ruleFrom.short]"
+              >
                 <template v-slot:prepend>
                   <q-icon name="lock" />
                 </template>
@@ -49,10 +70,12 @@ import { collection, addDoc } from 'firebase/firestore'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { ref } from 'vue'
 import route from '@/router'
+import { RULE_INPUT_FROM } from '@/common/validate/index'
 
 let email = ref('')
 let username = ref('')
 let password = ref('')
+const ruleFrom = RULE_INPUT_FROM
 
 const signUpUser = async () => {
   try {

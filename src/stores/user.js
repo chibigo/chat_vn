@@ -3,7 +3,9 @@ export const userLoginStore = defineStore('user', {
   state: () => {
     return {
       id: null,
-      name: ''
+      name: '',
+      image: '',
+      isLoggedIn: false
     }
   },
   persist: true

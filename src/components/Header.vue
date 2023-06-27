@@ -7,11 +7,16 @@
       mobile-arrows
       class="bg-primary text-white shadow-2"
     >
-      <q-route-tab :to="'/'" name="home" icon="home" label="Home" />
-      <q-route-tab :to="'/chats'" name="Chat" icon="chat" label="Chat" />
-      <q-route-tab :to="'/photos'" name="photos" icon="photo" label="Photos" />
-      <q-route-tab :to="'/videos'" name="videos" icon="slow_motion_video" label="Videos" />
-      <q-route-tab color="primary" label="Products">
+      <q-route-tab :to="'/'" name="home" icon="home" :label="$t('nav.home')" />
+      <q-route-tab :to="'/chats'" name="Chat" icon="chat" :label="$t('nav.chat')" />
+      <q-route-tab :to="'/photos'" name="photos" icon="photo" :label="$t('nav.photo')" />
+      <q-route-tab
+        :to="'/videos'"
+        name="videos"
+        icon="slow_motion_video"
+        :label="$t('nav.video')"
+      />
+      <q-route-tab color="primary" :label="$t('nav.product')">
         <q-menu>
           <q-list style="min-width: 100px">
             <q-item clickable v-close-popup>
@@ -24,13 +29,8 @@
           </q-list>
         </q-menu>
       </q-route-tab>
-      <q-chip class="q-ml-auto">
-        <q-avatar>
-          <img src="https://cdn.quasar.dev/img/boy-avatar.png" />
-        </q-avatar>
-        {{ name }}
-      </q-chip>
-      <q-tab name="logouts" icon="logout" label="Logut" @click="handleLogout()" />
+      <I18nComp class="q-ml-auto" />
+      <ButtonProfileComp :name="name" />
     </q-tabs>
   </div>
   <div>
@@ -39,10 +39,12 @@
 </template>
 
 <script setup>
-import Breadcrumbs from './Breadcrumbs.vue'
-import { ref, watchEffect } from 'vue'
 import route from '@/router'
+import { ref, watchEffect } from 'vue'
 import { userLoginStore } from '@/stores/user.js'
+import ButtonProfileComp from '@/components/buttons/buttonProfileComp.vue'
+import Breadcrumbs from './Breadcrumbs.vue'
+import I18nComp from '@/components/buttons/i18nComp.vue'
 
 const tab = ref('home')
 const name = ref('No_name')
@@ -53,10 +55,6 @@ const getRouter = () => {
   breadcrumbsList.value = route.currentRoute.value.matched
 }
 
-const handleLogout = () => {
-  localStorage.removeItem('token')
-  route.push('/login')
-}
 const getUserItem = async () => {
   name.value = userStore.name
 }
